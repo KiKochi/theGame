@@ -74,7 +74,6 @@ function calCrit(dealer, damage) {
   let con = Math.random() <= dealer.critChance;
   console.log(con)
   if (con) {
-    alert(dealer.name + ' crit')
     return damage * dealer.critDamage;
   } else {
     return damage;
