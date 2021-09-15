@@ -1,34 +1,20 @@
-const ATTACK_VALUE = 10;
-const STRONG_ATTACK_VALUE = 17;
-const MONSTER_ATTACK_VALUE = 14;
-const player = {
-  name: "player",
-  maxLife: 100,
-  attack: 10,
-  critChance: 0.2,
-  critDamage: 1.5,
-  maxAttack: 1.2,
-  minAttack: 0.8,
-  skillMultiplayer: 1.5,
-
+let player;
+let noManaError = "You Don't Have Mana to Use This Skill";
+let currentMonsterHealth;
+let currentPlayerHealth;
+let currentPlayerMana;
+let roundCounter;
+let currentRound = 1;
+let buffArr = [];
+player = assassin;
+function start() {
+  currentMonsterHealth = monster.maxLife;
+  currentPlayerHealth = player.maxLife;
+  currentPlayerMana = player.maxMana;
+  adjustHealthBars(monster.maxLife, player.maxLife, player.maxMana);
 }
-const monster = {
-  name: "monster",
-  maxLife: 100,
-  attack: 12,
-  critChance: 0.2,
-  critDamage: 1.5,
-  maxAttack: 1.4,
-  minAttack: 0.8,
-  skillMultiplayer: 1.5,
-}
-
-let currentMonsterHealth = monster.maxLife;
-let currentPlayerHealth = player.maxLife;
-adjustHealthBars(monster.maxLife, player.maxLife);
-
+start();
 function attackMonster(type) {
-  let attackValue;
   const damage = calDamage(player, type)
   dealMonsterDamage(damage);
   currentMonsterHealth -= damage;
@@ -38,6 +24,12 @@ function roundEnd() {
   const damage = calDamage(monster, "normalAttack")
   dealPlayerDamage(damage);
   currentPlayerHealth -= damage;
+  if (currentPlayerMana + 10 >= player.maxMana) {
+    currentPlayerMana = player.maxMana
+  } else {
+    currentPlayerMana += 10;
+  }
+  manaUpdate()
   if (currentMonsterHealth <= 0 && currentPlayerHealth > 0) {
     alert('You won!');
   } else if (currentPlayerHealth <= 0 && currentMonsterHealth > 0) {
@@ -45,15 +37,36 @@ function roundEnd() {
   } else if (currentPlayerHealth <= 0 && currentMonsterHealth <= 0) {
     alert('You have a draw!');
   }
+  console.log('current round', currentRound)
+  currentRound++;
+  buffCheck()
 }
+function buffCheck() {
+  buffArr.forEach((buff) => {
+    if (buff.startRound == currentRound) {
+      player.attackBouns += buff.attack;
+      console.log('buff applied', currentRound, buff.startRound)
+    }
+    if (buff.endRound < currentRound && !buff.ended) {
+      player.attackBouns -= buff.attack;
+      buff.ended = true;
+      console.log('buff removed')
+    }
+  })
+
+}
+
 function dealMonsterDamage(damage) {
   monsterHealthBar.value = +monsterHealthBar.value - damage;
 }
 function dealPlayerDamage(damage) {
   playerHealthBar.value = +playerHealthBar.value - damage;
 }
+function manaUpdate() {
+  playerManaBar.value = currentPlayerMana;
+}
 function calDamage(dealer, attackType) {
-  let beforeCrit = (Math.random() * (dealer.maxAttack - dealer.minAttack) + dealer.minAttack) * dealer.attack;
+  let beforeCrit = (Math.random() * (dealer.maxAttack - dealer.minAttack) + dealer.minAttack) * (dealer.attack + dealer.attackBouns);
   console.log(beforeCrit, dealer.name)
   let afterCrit = calCrit(dealer, beforeCrit)
   let afterTypeMultiplayer;
@@ -62,10 +75,8 @@ function calDamage(dealer, attackType) {
     console.log(afterTypeMultiplayer, dealer.name)
     return afterTypeMultiplayer;
   }
-  else if (attackType === "skillAttack") {
-    console.log("lol")
-    afterTypeMultiplayer = afterCrit * dealer.skillMultiplayer;
-    console.log(afterTypeMultiplayer, dealer.name)
+  else if (attackType === "chargeAttack") {
+    afterTypeMultiplayer = afterCrit * dealer.chargeMultiplayer;
     return afterTypeMultiplayer;
   }
 }
@@ -80,13 +91,43 @@ function calCrit(dealer, damage) {
   }
 }
 
+function classSelect(playerClass) {
+  if (username.value) {
+    player = playerClass;
+    start()
+    inputSec.style.display = "none";
+    healtSec.style.display = "block";
+    controlSec.style.display = "flex";
+    player.name = username.value;
+    skillBtn.innerHTML = playerClass.skillName
+  }
+  else alert('Please Enter Your Name')
+}
+
 function attackHandler() {
   attackMonster('normalAttack');
 }
 
-function strongAttackHandler() {
-  attackMonster('skillAttack');
+function chargeAttackHandler() {
+  attackMonster('chargeAttack');
 }
 
+function skillHandler() {
+  player.skill()
+}
+
+function warriorHandler() {
+  classSelect(warrior);
+}
+function mageHandler() {
+  classSelect(mage);
+}
+function assassinHandler() {
+  classSelect(assassin);
+}
 attackBtn.addEventListener('click', attackHandler);
-skillAttackBtn.addEventListener('click', strongAttackHandler);
+chargeAttackBtn.addEventListener('click', chargeAttackHandler);
+skillBtn.addEventListener('click', skillHandler);
+warriorBtn.addEventListener('click', warriorHandler);
+mageBtn.addEventListener('click', mageHandler);
+assassinBtn.addEventListener('click', assassinHandler);
